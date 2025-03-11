@@ -22,6 +22,7 @@ function image_size {
 }
 
 function num_cves {
+    # mcr.microsoft.com/oss/v2/aquasecurity/trivy:v0.58.2
     docker run --rm cgr.dev/chainguard/grype $1 -o json 2>/dev/null | jq '.matches | length'
 }
 
