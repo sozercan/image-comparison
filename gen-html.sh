@@ -22,8 +22,8 @@ function image_size {
 }
 
 function num_cves {
-    # mcr.microsoft.com/oss/v2/aquasecurity/trivy:v0.58.2
-    docker run --rm cgr.dev/chainguard/grype $1 -o json 2>/dev/null | jq '.matches | length'
+    # docker run --rm cgr.dev/chainguard/grype $1 -o json 2>/dev/null | jq '.matches | length'
+    docker run --rm mcr.microsoft.com/oss/v2/aquasecurity/trivy:v0.58.2 image $1 -q -f json 2>/dev/null | jq '(.Results[0].Vulnerabilities | length) as $os_vulns | (.Results[1].Vulnerabilities | length) as $lang_vulns | $os_vulns + $lang_vulns'
 }
 
 function main {
