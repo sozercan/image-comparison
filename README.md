@@ -1,7 +1,7 @@
 # image-comparison
 
-https://sozercan.github.io/image-comparison/comparison-kube-proxy.html
+[kube-proxy](https://sozercan.github.io/image-comparison/comparison-kube-proxy.html)
 
-https://sozercan.github.io/image-comparison/comparison-coredns.html
+[coredns](https://sozercan.github.io/image-comparison/comparison-coredns.html)
 
-https://sozercan.github.io/image-comparison/comparison-kube-state-metrics.html
+[kube-state-metrics](https://sozercan.github.io/image-comparison/comparison-kube-state-metrics.html)
