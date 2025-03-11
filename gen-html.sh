@@ -22,37 +22,28 @@ function image_size {
 }
 
 function num_cves {
-    docker run --rm cgr.dev/chainguard/grype $1 -o json 2>/dev/null | jq '.matches | length' 
+    docker run --rm cgr.dev/chainguard/grype $1 -o json 2>/dev/null | jq '.matches | length'
 }
 
 function main {
     for combo in \
-        "go|Go|cgr.dev/chainguard/go:latest|golang:latest" \
-        "nginx|Nginx|cgr.dev/chainguard/nginx:latest|nginx:latest" \
-        "php|PHP|cgr.dev/chainguard/php:latest|php:latest"; do
+    "kube-state-metrics|kube-state-metrics|mcr.microsoft.com/oss/v2/kubernetes/kube-state-metrics:v2.14.0|registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.14.0" \
+    "kube-proxy|kube-proxy|mcr.microsoft.com/oss/v2/kubernetes/kube-proxy:v1.29.13|registry.k8s.io/kube-proxy:v1.29.13" \
+    "coredns|coredns|mcr.microsoft.com/oss/v2/kubernetes/coredns:v1.11.3|registry.k8s.io/coredns/coredns:v1.11.3"; do
 
         image_key="$(echo "${combo}" | cut -d\| -f1)"
         image_name="$(echo "${combo}" | cut -d\| -f2)"
 
         ours_ref="$(echo "${combo}" | cut -d\| -f3)"
         ours_cves_num="$(num_cves "${ours_ref}")"
-        
+
         theirs_ref="$(echo "${combo}" | cut -d\| -f4)"
         theirs_cves_num="$(num_cves "${theirs_ref}")"
 
         ours_size="$(image_size "${ours_ref}")"
 
-        # The "created" field in the image config now represents the
-        # last time a package in the image was updated. Instead of looking at this
-        # field to determine the last time the image was rebuilt, check the latest signature.
-        # For more info, see https://www.chainguard.dev/unchained/designing-build-date-epoch-in-chainguard-images
-        #ours_crane_resp="$(crane config "${ours_ref}")"
-        #ours_timestamp="$(epoch "$(echo "${ours_crane_resp}" | jq -r '.created')")"
-        ours_timestamp="$(epoch "$(cosign download signature "${ours_ref}" | tail -n1 | jq -r .Cert.NotBefore)")"
-
         theirs_size="$(image_size "${theirs_ref}")"
         theirs_crane_resp="$(crane config "${theirs_ref}")"
-        theirs_timestamp="$(epoch "$(echo "${theirs_crane_resp}" | jq -r '.created')")"
 
         ours_size_num="$(echo "${ours_size}" | awk '{print $1}')"
         ours_size_unit="$(echo "${ours_size}" | awk '{print $2}')"
@@ -62,17 +53,14 @@ function main {
         generated_at_timestamp="$(epoch_now)"
 
         cat comparison.template.html | \
-            sed "s|{{imageName}}|${image_name}|g" | \
-            sed "s|{{oursCvesNum}}|${ours_cves_num}|g" | \
-            sed "s|{{oursSizeNum}}|${ours_size_num}|g" | \
-            sed "s|{{oursSizeUnit}}|${ours_size_unit}|g" | \
-            sed "s|{{oursTimestamp}}|${ours_timestamp}|g" | \
-            sed "s|{{theirsCvesNum}}|${theirs_cves_num}|g" | \
-            sed "s|{{theirsSizeNum}}|${theirs_size_num}|g" | \
-            sed "s|{{theirsSizeUnit}}|${theirs_size_unit}|g" | \
-            sed "s|{{theirsTimestamp}}|${theirs_timestamp}|g" | \
-            sed "s|{{generatedAtTimestamp}}|${generated_at_timestamp}|g" > \
-                "comparison-${image_key}.html"
+        sed "s|{{imageName}}|${image_name}|g" | \
+        sed "s|{{oursCvesNum}}|${ours_cves_num}|g" | \
+        sed "s|{{oursSizeNum}}|${ours_size_num}|g" | \
+        sed "s|{{oursSizeUnit}}|${ours_size_unit}|g" | \
+        sed "s|{{theirsCvesNum}}|${theirs_cves_num}|g" | \
+        sed "s|{{theirsSizeNum}}|${theirs_size_num}|g" | \
+        sed "s|{{theirsSizeUnit}}|${theirs_size_unit}|g" > \
+        "comparison-${image_key}.html"
     done
 }
 
